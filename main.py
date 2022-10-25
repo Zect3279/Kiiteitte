@@ -24,8 +24,8 @@ api = tweepy.API(auth)
 def post_tweet(title: str, video_id: str):
   tweet = TWEET_FORMAT.format(title, video_id, video_id)
   # post tweet
-  api.update_status(tweet)
   print(tweet)
+  api.update_status(tweet)
 
 while True:
   data = requests.get(NOW_PLAYING_API_URL).json()
