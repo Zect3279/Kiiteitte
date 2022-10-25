@@ -33,7 +33,7 @@ while True:
   start_time = datetime.datetime.fromisoformat(data['start_time'])
   timezone = datetime.timezone(datetime.timedelta(hours=9))
   now_time = datetime.datetime.now(timezone)
-  wait_time = (start_time - now_time).total_seconds() + (duration/1000) + 1
+  wait_time = (start_time - now_time).total_seconds() + (duration/1000) + 2
   post_tweet(data['title'], data['video_id'])
   time.sleep(wait_time)
 
