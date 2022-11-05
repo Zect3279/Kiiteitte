@@ -8,7 +8,7 @@ import time
 
 load_dotenv()
 
-NOW_PLAYING_API_URL = "https://cafeapi.kiite.jp/api/cafe/now_playing"
+NOW_PLAYING_API_URL = "https://cafe.kiite.jp/api/cafe/now_playing"
 TWEET_FORMAT = """\
 ♪{} #{} #Kiite
 Kiite Cafeできいてます https://cafe.kiite.jp/ https://nico.ms/{}
