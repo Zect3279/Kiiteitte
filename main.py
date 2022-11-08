@@ -13,6 +13,10 @@ TWEET_FORMAT = """\
 ♪{} #{} #Kiite
 Kiite Cafeできいてます https://cafe.kiite.jp/ https://nico.ms/{}
 """
+TWEET_FORMAT_TWO = """\
+♪{} （2回目） #{} #Kiite
+Kiite Cafeできいてます https://cafe.kiite.jp/ https://nico.ms/{}
+"""
 
 # Authenticate to Twitter
 auth = tweepy.OAuthHandler(os.getenv('API_KEY'), os.getenv('API_SECRET'))
@@ -22,10 +26,16 @@ auth.set_access_token(os.getenv('ACCESS_TOKEN'), os.getenv('ACCESS_TOKEN_SECRET'
 api = tweepy.API(auth)
 
 def post_tweet(title: str, video_id: str):
-  tweet = TWEET_FORMAT.format(title, video_id, video_id)
-  # post tweet
-  print(tweet)
-  api.update_status(tweet)
+  try:
+    tweet = TWEET_FORMAT.format(title, video_id, video_id)
+    # post tweet
+    print(tweet)
+    api.update_status(tweet)
+  except:
+    tweet2 = TWEET_FORMAT_TWO.format(title, video_id, video_id)
+    print(tweet2)
+    api.update_status(tweet2)
+    
 
 while True:
   data = requests.get(NOW_PLAYING_API_URL).json()
