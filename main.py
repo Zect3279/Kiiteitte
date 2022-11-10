@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 import tweepy
-from warnings import catch_warnings
 import requests
 import datetime
 import time
@@ -9,6 +8,8 @@ import time
 load_dotenv()
 
 NOW_PLAYING_API_URL = "https://cafe.kiite.jp/api/cafe/now_playing"
+NOW_PLAYING_API_URL_TOW = "https://cafeapi.kiite.jp/api/cafe/now_playing"
+
 TWEET_FORMAT = """\
 ♪{} #{} #Kiite
 Kiite Cafeできいてます https://cafe.kiite.jp/ https://nico.ms/{}
@@ -35,11 +36,21 @@ def post_tweet(title: str, video_id: str):
     tweet2 = TWEET_FORMAT_TWO.format(title, video_id, video_id)
     print(tweet2)
     api.update_status(tweet2)
-    
+
 
 while True:
-  data = requests.get(NOW_PLAYING_API_URL).json()
-  duration = data['msec_duration']
+  row_data = {}
+  data = {}
+  duration = 0
+  try:
+    row_data = requests.get(NOW_PLAYING_API_URL)
+    data = row_data.json()
+    duration = data['msec_duration']
+  except:
+    print('2')
+    row_data = requests.get(NOW_PLAYING_API_URL_TOW)
+    data = row_data.json()
+    duration = data['msec_duration']
   start_time = datetime.datetime.fromisoformat(data['start_time'])
   timezone = datetime.timezone(datetime.timedelta(hours=9))
   now_time = datetime.datetime.now(timezone)
