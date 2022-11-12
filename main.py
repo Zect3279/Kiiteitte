@@ -9,7 +9,7 @@ import json
 load_dotenv()
 
 NOW_PLAYING_API_URL = "https://cafe.kiite.jp/api/cafe/now_playing"
-NOW_PLAYING_API_URL_TOW = "https://cafeapi.kiite.jp/api/cafe/now_playing"
+NOW_PLAYING_API_URL_TWO = "https://cafeapi.kiite.jp/api/cafe/now_playing"
 
 TWEET_FORMAT = """\
 ♪{} #{} #Kiite
@@ -53,7 +53,7 @@ def post_discord(data):
   video_img = data["baseinfo"]["thumbnail_url"]
   # print(title, video_id, view, comment, mylist, author_name, author_icon, timestamp, video_img)
   discord = {"username": "Kiiteitte","avatar_url": "https://pbs.twimg.com/profile_images/1584526973505634304/M686vgg3_400x400.jpg","content": None}
-  discord.update({"embeds":[{"title": f"♪ {title}","url": f"https://nico.ms/{video_id}","fields": [{"name": "▶ 再生数","value": f"{view}","inline": True},{"name": "📔 コメント数","value": f"{comment}","inline": True},{"name": "🖊️ マイリス数","value": f"{mylist}","inline": True}],"author": {"name": f"{author_name}","icon_url": f"{author_icon}"},"timestamp": f"{timestamp}","thumbnail": {"url": f"{video_img}"}}]})
+  discord.update({"embeds":[{"title": f"♪ {title}","url": f"https://nico.ms/{video_id}","fields": [{"name": "▶ 再生数","value": f"{view}","inline": True},{"name": "📔 コメント数","value": f"{comment}","inline": True},{"name": "🖊️ マイリス数","value": f"{mylist}","inline": True},{"name": "☕Cafeに行く","value": "https://cafe.kiite.jp/"}],"author": {"name": f"{author_name}","icon_url": f"{author_icon}"},"timestamp": f"{timestamp}","thumbnail": {"url": f"{video_img}"}}]})
   requests.post(os.getenv('WEBHOOK_URL'), json.dumps(discord), headers=DISCORD_HEADER)
 
 while True:
@@ -61,12 +61,12 @@ while True:
   data = {}
   duration = 0
   try:
-    row_data = requests.get(NOW_PLAYING_API_URL)
+    row_data = requests.get(NOW_PLAYING_API_URL_TWO)
     data = row_data.json()
     duration = data['msec_duration']
   except:
     print('2')
-    row_data = requests.get(NOW_PLAYING_API_URL_TOW)
+    row_data = requests.get(NOW_PLAYING_API_URL)
     data = row_data.json()
     duration = data['msec_duration']
   start_time = datetime.datetime.fromisoformat(data['start_time'])
