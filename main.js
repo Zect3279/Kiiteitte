@@ -18,7 +18,6 @@ var wait_time = 0
 
 ;(async ()=>{
 while (true){
-  console.log('hi')
   const response = await axios.get(NOW_PLAYING_API_URL)
   const data = response.data
   const duration = data['msec_duration']
