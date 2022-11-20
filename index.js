@@ -23,11 +23,21 @@ while (true){
   const duration = data['msec_duration']
   const msg = `♪${data['title']} #${data['video_id']} #Kiite\nKiite Cafeできいてます https://cafe.kiite.jp/ https://nico.ms/${data['video_id']}`
   wait_time = (Date.parse(data['start_time']) - Date.parse(new Date())) + duration + 2000;
+  var author_name = "N/A"
+  var author_icon = ""
+  try {
+    author_name = data["baseinfo"]["user_nickname"]
+    author_icon = data["baseinfo"]["user_icon_url"]
+  }
+  catch(error) {
+    author_name = "N/A"
+    author_icon = ""
+  }
   await axios.post(WEBHOOK_URL, {
     "username": "Kiiteitte",
     "avatar_url": "https://pbs.twimg.com/profile_images/1584526973505634304/M686vgg3_400x400.jpg",
     "content": null,
-    "embeds":[{"title": `♪ ${data['title']}`,"url": `https://nico.ms/${data['video_id']}`,"fields": [{"name": "▶ 再生数","value": `${data['baseinfo']['view_counter']}`,"inline": true},{"name": "📔 コメント数","value": `${data['baseinfo']['comment_num']}`,"inline": true},{"name": "🖊️ マイリス数","value": `${data['baseinfo']['mylist_counter']}`,"inline": true}],"author": {"name": `${data['baseinfo']['user_nickname']}`,"icon_url": `${data['baseinfo']['user_icon_url']}`},"timestamp": `${data['start_time']}`,"thumbnail": {"url": `${data['baseinfo']['thumbnail_url']}`}}]
+    "embeds":[{"title": `♪ ${data['title']}`,"url": `https://nico.ms/${data['video_id']}`,"fields": [{"name": "▶ 再生数","value": `${data['baseinfo']['view_counter']}`,"inline": true},{"name": "📔 コメント数","value": `${data['baseinfo']['comment_num']}`,"inline": true},{"name": "🖊️ マイリス数","value": `${data['baseinfo']['mylist_counter']}`,"inline": true}],"author": {"name": `${author_name}`,"icon_url": `${author_icon}`},"timestamp": `${data['start_time']}`,"thumbnail": {"url": `${data['baseinfo']['thumbnail_url']}`}}]
   })
   await client.post('statuses/update', {
     status: msg
