@@ -1,83 +1,71 @@
+from linebot import LineBotApi
+from linebot.models import TextSendMessage
+import json
 import os
 from dotenv import load_dotenv
-import tweepy
 import requests
-import datetime
+from datetime import datetime, timezone
 import time
-import json
 
 load_dotenv()
 
-NOW_PLAYING_API_URL = "https://cafe.kiite.jp/api/cafe/now_playing"
-NOW_PLAYING_API_URL_TWO = "https://cafeapi.kiite.jp/api/cafe/now_playing"
+line_bot_api = LineBotApi(os.getenv('LI_NE'))
+line_user_id = os.getenv('US_ID')
+messages = TextSendMessage(text="Kiiteitteの停止を確認しました。\n直ちに再起動してください。")
 
-TWEET_FORMAT = """\
-♪{} #{} #Kiite
-Kiite Cafeできいてます https://cafe.kiite.jp/ https://nico.ms/{}
-"""
-TWEET_FORMAT_TWO = """\
-♪{} （2回目） #{} #Kiite
-Kiite Cafeできいてます https://cafe.kiite.jp/ https://nico.ms/{}
-"""
-
-DISCORD_HEADER = {'Content-Type': 'application/json'}
-
-
-# Authenticate to Twitter
-auth = tweepy.OAuthHandler(os.getenv('API_KEY'), os.getenv('API_SECRET'))
-auth.set_access_token(os.getenv('ACCESS_TOKEN'), os.getenv('ACCESS_TOKEN_SECRET'))
-
-# Create API object
-api = tweepy.API(auth)
-
-def post_tweet(title: str, video_id: str):
-  try:
-    tweet = TWEET_FORMAT.format(title, video_id, video_id)
-    # post tweet
-    print(tweet,"\n")
-    api.update_status(tweet)
-  except:
-    tweet2 = TWEET_FORMAT_TWO.format(title, video_id, video_id)
-    print(tweet2,"\n")
-    api.update_status(tweet2)
-
-def post_discord(data):
-  title = data["title"]
-  video_id = data["video_id"]
-  view = data["baseinfo"]["view_counter"]
-  comment = data["baseinfo"]["comment_num"]
-  mylist = data["baseinfo"]["mylist_counter"]
-  timestamp = data["start_time"]
-  video_img = data["baseinfo"]["thumbnail_url"]
-  try:
-    author_name = data["baseinfo"]["user_nickname"]
-    author_icon = data["baseinfo"]["user_icon_url"]
-  except:
-    author_name = "N/A"
-    author_icon = ""
-  print(title, video_id, view, comment, mylist, author_name, author_icon, timestamp, video_img,'\n')
-  discord = {"username": "Kiiteitte","avatar_url": "https://pbs.twimg.com/profile_images/1584526973505634304/M686vgg3_400x400.jpg","content": None}
-  discord.update({"embeds":[{"title": f"♪ {title}","url": f"https://nico.ms/{video_id}","fields": [{"name": "▶ 再生数","value": f"{view}","inline": True},{"name": "📔 コメント数","value": f"{comment}","inline": True},{"name": "🖊️ マイリス数","value": f"{mylist}","inline": True}],"author": {"name": f"{author_name}","icon_url": f"{author_icon}"},"timestamp": f"{timestamp}","thumbnail": {"url": f"{video_img}"}}]})
-  requests.post(os.getenv('WEBHOOK_URL'), json.dumps(discord), headers=DISCORD_HEADER)
+next_time = time.time()
 
 while True:
-  row_data = {}
-  data = {}
-  duration = 0
-  try:
-    row_data = requests.get(NOW_PLAYING_API_URL)
-    data = row_data.json()
-    duration = data['msec_duration']
-  except:
-    print('2')
-    row_data = requests.get(NOW_PLAYING_API_URL_TWO)
-    data = row_data.json()
-    duration = data['msec_duration']
-  start_time = datetime.datetime.fromisoformat(data['start_time'])
-  timezone = datetime.timezone(datetime.timedelta(hours=9))
-  now_time = datetime.datetime.now(timezone)
-  wait_time = (start_time - now_time).total_seconds() + (duration/1000) + 2
-  post_discord(data)
-  post_tweet(data['title'], data['video_id'])
-  time.sleep(wait_time)
+    uj = json.loads(requests.get("https://cafeapi.kiite.jp/api/cafe/users?limit=300").text)
 
+    np_row = json.loads(requests.get(os.getenv('NP_URL')).text)
+    np_id = np_row["lastA"]
+    np_reasons = json.loads(np_row["lastK"])
+    np_end = datetime.fromisoformat(np_row["lastL"]).replace(tzinfo=timezone.utc)
+
+    now = datetime.now(timezone.utc)
+    if np_end <= now:
+        print("error")
+        line_bot_api.push_message(line_user_id, messages=messages)
+    else:
+        comments = json.loads(requests.get("https://cafeapi.kiite.jp/api/cafe/user_comments").text)
+        new_fav = json.loads(requests.get(f"https://cafeapi.kiite.jp/api/cafe/new_fav?id={np_id}").text)
+        rotates = json.loads(requests.get(f"https://cafeapi.kiite.jp/api/cafe/user_gestures?id={np_id}").text)
+        fav_reason = [item["user_id"] for item in np_reasons if item["type"] == "favorite"]
+
+        place_list = []
+        for item in uj:
+            id = item["user_id"]
+            r = any(str(id) in key for key in rotates.keys()) or None
+            f = (id in new_fav or id in fav_reason) or None
+            pre_com = [c for c in comments if c["user_id"] == id and c["comment"]]
+            c = None
+            if pre_com:
+                c = max(pre_com, key=lambda d: d["created_at"])["comment"]
+            v = item["user_va"]["v"]
+            a = item["user_va"]["a"]
+            data = {"v": v, "a": a, "r": r, "f": f, "c": c}
+            data = {k: v for k, v in data.items() if v is not None}
+            place_list.append(data)
+
+        now = str(datetime.now())
+
+        gas = {
+        "timestamp": now,
+        "id": np_id,
+        "user_count": len(place_list),
+        "rotate_count": len(rotates),
+        "new_fav_count": len(new_fav),
+        "fav_count": len(new_fav)+len(fav_reason),
+        "pcr": place_list
+        }
+        requests.post(os.getenv('SP_SH'), data=json.dumps(gas))
+        print(now)
+
+    # 次の処理開始時刻を計算
+    next_time += 20
+
+    # 次の処理開始時刻まで待機
+    sleep_time = next_time - time.time()
+    if sleep_time > 0:
+        time.sleep(sleep_time)
