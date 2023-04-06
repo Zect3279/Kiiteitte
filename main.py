@@ -30,7 +30,7 @@ while True:
         print("error")
         if error_index >= 2:
           line_bot_api.push_message(line_user_id, messages=messages)
-        time.sleep(3)
+        time.sleep(4)
         continue
     else:
         error_index = 0
