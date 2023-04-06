@@ -27,6 +27,8 @@ while True:
     if np_end <= now:
         print("error")
         line_bot_api.push_message(line_user_id, messages=messages)
+        time.sleep()
+        continue
     else:
         comments = json.loads(requests.get("https://cafeapi.kiite.jp/api/cafe/user_comments").text)
         new_fav = json.loads(requests.get(f"https://cafeapi.kiite.jp/api/cafe/new_fav?id={np_id}").text)
