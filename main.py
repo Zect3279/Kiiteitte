@@ -4,7 +4,7 @@ import json
 import os
 from dotenv import load_dotenv
 import requests
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import time
 
 load_dotenv()
@@ -21,9 +21,9 @@ while True:
     np_row = json.loads(requests.get(os.getenv('NP_URL')).text)
     np_id = np_row["lastA"]
     np_reasons = json.loads(np_row["lastK"])
-    np_end = datetime.fromisoformat(np_row["lastL"]).replace(tzinfo=timezone.utc)
+    np_end = datetime.fromisoformat(np_row["lastL"])
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone(timedelta(hours=+9), 'JST'))
     if np_end <= now:
         print("error")
         line_bot_api.push_message(line_user_id, messages=messages)
