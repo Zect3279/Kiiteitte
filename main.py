@@ -28,9 +28,9 @@ while True:
     if np_end <= now:
         error_index += 1
         print("error")
-        if error_index >= 2:
+        if error_index >= 3:
           line_bot_api.push_message(line_user_id, messages=messages)
-        time.sleep(4)
+        time.sleep(3)
         continue
     else:
         error_index = 0
