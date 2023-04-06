@@ -14,6 +14,7 @@ line_user_id = os.getenv('US_ID')
 messages = TextSendMessage(text="Kiiteitteの停止を確認しました。\n直ちに再起動してください。")
 
 next_time = time.time()
+error_index = 0
 
 while True:
     uj = json.loads(requests.get("https://cafeapi.kiite.jp/api/cafe/users?limit=300").text)
@@ -25,35 +26,42 @@ while True:
 
     now = datetime.now(timezone(timedelta(hours=+9), 'JST'))
     if np_end <= now:
+        error_index += 1
         print("error")
-        line_bot_api.push_message(line_user_id, messages=messages)
-        time.sleep(2)
+        if error_index >= 2:
+          line_bot_api.push_message(line_user_id, messages=messages)
+        time.sleep(3)
         continue
     else:
+        error_index = 0
         comments = json.loads(requests.get("https://cafeapi.kiite.jp/api/cafe/user_comments").text)
         new_fav = json.loads(requests.get(f"https://cafeapi.kiite.jp/api/cafe/new_fav?id={np_id}").text)
         rotates = json.loads(requests.get(f"https://cafeapi.kiite.jp/api/cafe/user_gestures?id={np_id}").text)
         fav_reason = [item["user_id"] for item in np_reasons if item["type"] == "favorite"]
+        pr_reason = [item["user_id"] for item in np_reasons if item["type"] == "priority_playlist"]
+        pl_reason = [item["user_id"] for item in np_reasons if item["type"] == "add_playlist"]
 
         place_list = []
         for item in uj:
             id = item["user_id"]
             r = any(str(id) in key for key in rotates.keys()) or None
             f = (id in new_fav or id in fav_reason) or None
+            pr = (id in pr_reason) or None
+            pl = (id in pl_reason) or None
             pre_com = [c for c in comments if c["user_id"] == id and c["comment"]]
             c = None
             if pre_com:
                 c = max(pre_com, key=lambda d: d["created_at"])["comment"]
             v = item["user_va"]["v"]
             a = item["user_va"]["a"]
-            data = {"v": v, "a": a, "r": r, "f": f, "c": c}
+            data = {"v": v, "a": a, "r": r, "f": f, "c": c, "pr": pr, "pl": pl}
             data = {k: v for k, v in data.items() if v is not None}
             place_list.append(data)
 
-        now = str(datetime.now())
+        now_gas = str(datetime.now())
 
         gas = {
-        "timestamp": now,
+        "timestamp": now_gas,
         "id": np_id,
         "user_count": len(place_list),
         "rotate_count": len(rotates),
@@ -62,7 +70,7 @@ while True:
         "pcr": place_list
         }
         requests.post(os.getenv('SP_SH'), data=json.dumps(gas))
-        print(now)
+        print(now_gas)
 
     # 次の処理開始時刻を計算
     next_time += 20
